@@ -342,7 +342,7 @@ def vision_loop():
 
 # ---------------- web UI ----------------
 PAGE = """<!doctype html><meta charset=utf-8>
-<title>followme bot</title>
+<title>followme-bot</title>
 <style>
  body{background:#111;color:#ddd;font:14px/1.45 -apple-system,system-ui,sans-serif;
       margin:0;padding:16px;display:flex;gap:16px;flex-wrap:wrap}

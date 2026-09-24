@@ -16,7 +16,7 @@ If a scenario has to change, say why in the PR.
 
 ## Licensing of contributions
 
-followme bot is dual-licensed (AGPL-3.0 and a commercial license, see
+followme-bot is dual-licensed (AGPL-3.0 and a commercial license, see
 [COMMERCIAL.md](COMMERCIAL.md)). To keep that possible, contributions need a
 contributor license agreement: by opening a pull request you agree that your
 contribution is licensed to the project under the AGPL-3.0, and that the

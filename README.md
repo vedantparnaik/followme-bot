@@ -1,32 +1,33 @@
-# followme bot
+# followme-bot
 
-A robot that follows one person: it keeps ~2.6 m behind them, goes around
-things in the way, and does not get confused when someone else walks in
-between.
+Person-following for a small ground robot. It locks onto one person, stays
+about 2.6 m behind them, steers around obstacles, and keeps track of who it
+is following when other people walk through the frame.
 
-This repo is the brain, a simulator that tries hard to break it, and the code
-that runs it on a real 4-wheel rover (Raspberry Pi + a laptop running YOLO).
+The repo has the brain (`followme/`), a 2-D simulator with test scenarios
+(`simkit/`), a ROS 2 package, and the code that runs it on my rover: a
+Raspberry Pi 4 driving four motors, with a laptop running YOLO over Wi-Fi.
 
-| Stranger in the line of sight | Around furniture | Target behind a pillar |
+| Look-alike crosses in front | Around furniture | Behind a pillar |
 |:---:|:---:|:---:|
 | ![crossing](docs/media/crossing.gif) | ![obstacles](docs/media/obstacles.gif) | ![pillar](docs/media/pillar.gif) |
-| The tracker hands the target's ID to a look-alike. The brain notices (the box teleported, the colours are off), drops it, and re-identifies the right person when they reappear. | The direct line cuts through a pallet and a chair. The pallet has no camera label, so only the ultrasonics see it. | The person vanishes mid-frame. The rover drives around the pillar to where they were last seen, then picks them up again by appearance. |
+| Someone in similar clothes stops in front of the target and the tracker gives them the target's ID. The swap gets caught and the right person is picked up again. | The straight line to the person goes through a pallet and a chair. The pallet isn't a YOLO class, so only the ultrasonics see it. | The person disappears behind a pillar. The rover drives to where it last saw them and re-identifies them when they come out. |
 
 ## What it does
 
-- **Locks one person** and follows at a set distance, stopping when they stop.
-- **Knows who it is following.** Appearance gallery (torso and legs colour
-  histograms), ID-swap detection, and re-identification after occlusion.
-  Never switches to a stranger on its own.
-- **Avoids obstacles** from ultrasonics (or a lidar) and from anything the
-  camera detector knows (chairs, bags, other people), with a few seconds of
-  memory so corners do not vanish when they leave the sensor cone.
-- **Handles losing them.** Drives to where they were last seen if they
-  disappeared behind something, turns toward where they went if they left
-  the frame, then waits. Bounded, always.
-- **Two drive profiles, same brain.** `hardware` for a real skid-steer that
-  cannot turn gently (stiction kick, duty floors, 250 ms latency); `ideal`
-  for perfect motors.
+- Locks onto one person and follows at a set distance. Stops when they stop.
+- Remembers what they look like (colour histograms of torso and legs),
+  catches tracker ID swaps, and re-identifies them after they've been out of
+  sight. It won't start following someone else unless you re-lock it.
+- Avoids obstacles from the ultrasonics (or a lidar) and anything YOLO can
+  label: chairs, bags, other people. Obstacles are remembered for a few
+  seconds so a corner doesn't disappear once it leaves the sensor cone.
+- When the person is lost, it drives to where they were last seen (if they
+  vanished behind something) or turns toward the side they left on. If that
+  doesn't find them, it stops and waits.
+- Two drive profiles on the same brain: `hardware` for a skid-steer that
+  can't turn gently from rest (stiction kick, duty floors, ~250 ms latency),
+  and `ideal` for perfect motors.
 
 ## Quick start (simulator, no robot needed)
 
@@ -50,12 +51,12 @@ crossing      0  True           0                0      26.3      0.0     1     
 pillar        0  True           0                0      24.0      0.0     1         0.65  FOLLOW@2.8m
 ```
 
-A run passes with no collisions, no contact with any person, under 0.5 s
-spent following the wrong person, and ending locked on the right one.
-Current results: hardware plant with sonar 32/32 (8 seeds), with lidar 16/16,
-ideal plant 16/16.
+A run passes if there are no collisions, no contact with any person, less
+than 0.5 s spent following the wrong person, and it ends locked on the right
+one. Right now 32/32 runs pass on the hardware plant with sonar (8 seeds),
+16/16 with lidar, and 16/16 on the ideal plant.
 
-### With ROS 2 and RViz
+### ROS 2 and RViz
 
 ```bash
 tools/run_ros_sim.sh                                  # obstacles, hardware, sonar
@@ -64,73 +65,74 @@ ros2 topic pub --once /follow/cmd std_msgs/String '{data: estop}'
 ros2 topic echo /follow/state
 ```
 
-Tested with ROS 2 Humble (RoboStack on macOS). The `world` node stands in for
-the robot (detections, range, odometry); the `brain` node is the same
+Tested on ROS 2 Humble (RoboStack on macOS). The `world` node plays the
+robot (detections, range, odometry) and the `brain` node runs the same
 `followme.Brain`.
 
-## On a real robot
+## On the real robot
 
-```
- Raspberry Pi (rover)                      laptop
- ─────────────────────                     ──────────────────────────────
- camera ── MJPEG /stream ───────────────▶  YOLO + ByteTrack, colour features
- HC-SR04 x3 ── /range (optional) ───────▶  followme.Brain
- duty dead reckoning ── /odom ──────────▶      │
- motors ◀── /cmd?l=&r= (0.25 s deadman) ◀──────┘   UI: http://127.0.0.1:8080/
-```
+The Pi streams the camera as MJPEG, serves odometry (and ultrasonic readings
+if you have them), and takes motor commands over HTTP. The laptop runs
+YOLO + ByteTrack and the brain, and sends the commands back. If the Pi
+doesn't get a command for 0.25 s it stops the motors.
 
 ```bash
-# once: ssh-copy-id pi@raspberrypi.local
-PI_HOST=raspberrypi.local PI_USER=pi tools/deploy_pi.sh      # PI_SONAR=1 for ultrasonics
+ssh-copy-id pi@raspberrypi.local                              # once
+PI_HOST=raspberrypi.local PI_USER=pi tools/deploy_pi.sh       # PI_SONAR=1 for ultrasonics
 pip install -e ".[robot]"
 FOLLOWME_PI=raspberrypi.local:8000 python robot/mac/follow_server.py
 ```
 
-Open http://127.0.0.1:8080/, stand in front of the camera, press ARM. It
-starts disarmed, E-STOP latches, and the Pi stops the motors if the laptop
-or the Wi-Fi goes away. Start with the default 15 % speed cap.
+Open http://127.0.0.1:8080/, stand in front of the camera and press ARM. It
+starts disarmed, E-STOP stays latched until you reset it, and the Pi stops
+the motors if the laptop or the Wi-Fi drops. Leave the speed cap at the
+default 15% for the first runs.
 
-No robot yet? `python tools/fake_pi.py --video some_walk.mov` serves a video
-as the camera so you can run the laptop side against recorded footage.
+To try the laptop side without a robot, `tools/fake_pi.py` serves a video
+file as the camera:
 
-Wiring, pins and the drive layer: [docs/hardware.md](docs/hardware.md).
+```bash
+python tools/fake_pi.py --video some_walk.mov
+FOLLOWME_PI=127.0.0.1:8000 python robot/mac/follow_server.py
+```
+
+Wiring, pins and the drive layer are in [docs/hardware.md](docs/hardware.md).
 
 ## Layout
 
 ```
-followme/            the brain: perception, re-ID, tracker, obstacles, planner, state machine
-simkit/              2-D world, virtual camera + range sensors, drivetrain models, scenarios, runner
-tests/               unit tests and every scenario as a test
-ros2_ws/src/followme_ros/   world + brain nodes, launch, RViz config
-robot/pi/            Pi server: MJPEG, motors (kick, floors, deadman), /odom, HC-SR04 driver
-robot/mac/           laptop app: YOLO + ByteTrack, colour features, web UI
-tools/               deploy, fake Pi, ROS launcher
-docs/                architecture, hardware
+followme/                  the brain: perception, re-ID, tracker, obstacles, planner, state machine
+simkit/                    2-D world, virtual camera and range sensors, drivetrain models, scenarios
+tests/                     unit tests, plus every scenario as a test
+ros2_ws/src/followme_ros/  world and brain nodes, launch file, RViz config
+robot/pi/                  Pi server (camera, motors, deadman, /odom) and the HC-SR04 driver
+robot/mac/                 laptop app: YOLO + ByteTrack, colour features, web UI
+tools/                     deploy script, fake Pi, ROS launcher
 ```
 
-How it works: [docs/architecture.md](docs/architecture.md).
+How the brain works: [docs/architecture.md](docs/architecture.md).
 
 ## Limitations
 
-Stated plainly, because a follow-me robot that "just works" in a demo is easy
-and one that works in a car park is not:
-
-- **No map, no SLAM.** A few seconds of obstacle memory. It follows a person
-  along a path a person can walk; it does not plan through mazes.
-- **Camera-only obstacle sensing is limited to what the detector knows.**
-  In camera-only mode the scenarios with a pallet, a bollard and a pillar
-  collide, by design: those have no camera label. Use the ultrasonics.
-- **Colour re-ID** tells a red jacket from a grey one, not two identical
-  uniforms. The gallery takes any feature vector, so a learned re-ID model
-  drops in.
-- **Odometry is dead reckoning from motor duty**, no encoders. Good for a few
+- There's no map or SLAM, just a few seconds of obstacle memory. It follows
+  a person along a path a person can walk; it won't find its way out of a
+  maze.
+- Without the ultrasonics, the only obstacles it can see are things YOLO has
+  a class for. In camera-only mode the pallet, bollard and pillar scenarios
+  end in collisions.
+- Colour histograms tell different outfits apart, not two people dressed the
+  same. The gallery takes any feature vector, so a learned re-ID model can
+  replace them.
+- Odometry is dead reckoning from motor duty (no encoders). Fine for a few
   seconds of memory, not for navigation.
-- **The sim is 2-D and kind.** Flat ground, cylinder people, clean geometry.
-  The drivetrain model is the measured one, which is where most of the real
-  difficulty is, but passing the sim is necessary, not sufficient.
+- Sensing is front only. Nothing covers the sides or the back.
+- The sim is 2-D: flat ground, cylinder people, clean geometry. The
+  drivetrain model is measured from the real rover, and that's where most of
+  the difficulty is, but a passing sim run doesn't guarantee the same
+  outside.
 
 ## License
 
-AGPL-3.0 ([LICENSE](LICENSE)), with a commercial license available for
-closed-source use: see [COMMERCIAL.md](COMMERCIAL.md). The laptop app uses
-Ultralytics YOLO, which is separately AGPL-3.0 licensed.
+AGPL-3.0 ([LICENSE](LICENSE)). A commercial license is available if you want
+to use it in closed-source products; see [COMMERCIAL.md](COMMERCIAL.md). The
+laptop app uses Ultralytics YOLO, which has its own AGPL-3.0 license.

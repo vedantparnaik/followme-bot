@@ -1,25 +1,26 @@
 """The follow-me state machine. One ``step()`` per camera frame.
 
-    IDLE ──arm──> ACQUIRE ──lock──> FOLLOW <──> AVOID
-                                      │  ^        │
-                            lost > grace  re-ID   └─> BLOCKED (nothing is free ahead)
-                                      v  │
-                    left the frame edge? ── no ──> PURSUE (drive to last-seen point)
-                                      │ yes          │ arrived / timed out
+    IDLE --arm--> ACQUIRE --lock--> FOLLOW <--> AVOID
+                                      |  ^        |
+                            lost > grace  re-ID   +-> BLOCKED (nothing is free ahead)
+                                      v  |
+                    left the frame edge? -- no --> PURSUE (drive to last-seen point)
+                                      | yes          | arrived / timed out
                                       v              v
-                                    SEARCH ──nothing found──> WAIT
-    any ──estop──> ESTOP (latched until reset)
+                                    SEARCH --nothing found--> WAIT
+    any --estop--> ESTOP (latched until reset)
 
 IDLE     disarmed. Perception still runs so you can see who it would lock.
 ACQUIRE  armed, nobody locked yet. Locks the biggest, most central person.
 FOLLOW   hold ``target_dist`` behind them, steer toward them.
 AVOID    same, but steering toward a free corridor instead of the person.
-BLOCKED  wants to move forward, every corridor is blocked. Stands still.
+BLOCKED  wants to move forward, every corridor is blocked. Stands still, and
+         backs off a little if it stays stuck.
 PURSUE   target vanished mid-frame (behind a pillar, a crowd): drive, with
          avoidance, to where they were last seen. Needs odometry.
 SEARCH   target gone: turn toward where they went (bounded).
-WAIT     search exhausted: stand still, keep looking by appearance. It never
-         locks a stranger on its own; a re-lock is an explicit user action.
+WAIT     search exhausted: stand still, keep looking by appearance. Only a
+         user re-lock picks a new person.
 ESTOP    latched stop.
 
 Inputs are plain data (detections + obstacle points + a timestamp), so the

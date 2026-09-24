@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "followme-bot"
 version = "0.1.0"
-description = "A follow-me robot brain: person tracking, re-identification, obstacle avoidance, and a simulator to prove it."
+description = "Person-following robot: target tracking, re-identification, obstacle avoidance and a 2-D simulator."
 readme = "README.md"
 license = { text = "AGPL-3.0-only" }
 authors = [{ name = "Vedant Parnaik" }]

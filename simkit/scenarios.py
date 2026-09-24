@@ -1,6 +1,6 @@
 """Test scenarios. Same seed -> same world, same people, same timing.
 
-loop       the original: an ellipse with four stops, no obstacles.
+loop       an ellipse with four stops, no obstacles.
 obstacles  the person walks around furniture; chasing them directly cuts
            the corner through it. One obstacle is invisible to the camera
            (only a range sensor sees it).

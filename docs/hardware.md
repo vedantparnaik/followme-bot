@@ -1,8 +1,8 @@
 # Hardware
 
-The reference rover. Nothing in `followme/` depends on it: any drivetrain
-that takes left/right duty and any camera that gives 640x480 frames will do,
-after adjusting `followme/config.py`.
+The rover this was built and tested on. Nothing in `followme/` depends on
+it: any drivetrain that takes left/right duty and any camera that gives
+640x480 frames will do, after adjusting `followme/config.py`.
 
 ## Parts
 
@@ -65,14 +65,14 @@ Between a duty command and the motors:
 
 | Constant | Value | Why |
 |----------|-------|-----|
-| `MIN_DUTY` | 18 % | Rolling floor. Any nonzero request is remapped onto 18-100 %. |
-| `TURN_MIN_DUTY` | 26 % | A skid-steer pivot scrubs all four tyres sideways. |
-| `KICK_DUTY`, `KICK_S` | 55 %, 0.18 s | Breaks stiction when a side starts from rest. Without it the floor would have to sit at the breakaway duty and the rover could never crawl. |
-| `SLEW` | 400 %/s | Four motors stepping to full duty at once sag the LiPo enough to brown out the driver logic. Stops are immediate. |
+| `MIN_DUTY` | 18% | Rolling floor. Any nonzero request is remapped onto 18-100%. |
+| `TURN_MIN_DUTY` | 26% | A skid-steer pivot scrubs all four tyres sideways. |
+| `KICK_DUTY`, `KICK_S` | 55%, 0.18 s | Breaks stiction when a side starts from rest. Without it the floor would have to sit at the breakaway duty and the rover could never crawl. |
+| `SLEW` | 400%/s | Four motors stepping to full duty at once sag the LiPo enough to brown out the driver logic. Stops are immediate. |
 | deadman | 0.25 s | No command for 0.25 s: motors stop. |
 
 These are why the `hardware` profile exists. The smallest possible turn from
-rest is a 55 % kick, so the brain steers by curving while rolling and only
+rest is a 55% kick, so the brain steers by curving while rolling and only
 pivots in short nudge-and-settle pulses. `simkit.plants.HardwarePlant`
 reproduces this layer (plus ~0.25 s camera-to-motor latency), which is what
 the scenarios are tuned against.

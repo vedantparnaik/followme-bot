@@ -8,7 +8,7 @@ driving controls overlaid. Open http://<pi-ip>:8000/ on your Mac.
   Mounted front-centre (between FL and FR), ~1.5 ft above the wheels, so the
   view faces the direction of travel: no W/S inversion.
 - Motors: background control loop applies latest command; STOPS if no command
-  within TIMEOUT (deadman). Robust against stuck keys (self-heal ~0.7s).
+  within TIMEOUT (deadman). Stuck keys self-heal after ~0.7s.
 
 Drive mapping (verified on the bench, see docs/hardware.md):
   LEFT  side: FL RPWM=GPIO12 LPWM=GPIO13   RL RPWM=GPIO5  LPWM=GPIO6   normal

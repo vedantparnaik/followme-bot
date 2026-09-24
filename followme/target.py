@@ -1,6 +1,6 @@
-"""Who are we following?
+"""Target selection and identity tracking.
 
-Lock once, then follow that identity, not "whoever is biggest".
+Lock once, then follow that identity rather than whoever is biggest.
 
 1. Lock: the biggest, most central person with a tracker ID, and only after
    the same candidate has persisted for ``lock_stable_s``.

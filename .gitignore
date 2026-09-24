@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+build/
+dist/
+
+# ROS 2 workspace output
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+
+# Model weights (downloaded on first run)
+*.pt
+*.onnx
+
+# Robot run artefacts
+robot/pi/recordings/
+robot/pi/*.log
+robot/mac/follow_tune.json
+
+# Private: network credentials, local notes
+*.local
+*.local.*
+.env
+
+# Media: only the small sim GIFs in docs/media are tracked
+*.mov
+*.mp4
+*.mkv
+*.MOV
+
+.DS_Store

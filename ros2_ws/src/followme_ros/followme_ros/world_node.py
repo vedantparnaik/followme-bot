@@ -1,7 +1,7 @@
-"""The simulated world: people, obstacles, drivetrain and sensors.
+"""Simulated robot and world for the ROS 2 sim.
 
-Stands in for the robot. It takes duty commands and produces what the real
-robot produces: camera detections, range readings and odometry.
+Takes duty commands and publishes detections, range readings and odometry,
+like the real robot does.
 
   sub  /cmd_duty          geometry_msgs/Vector3   x = left %, y = right %
   pub  /detections        std_msgs/String (JSON)  what the detector saw
@@ -91,7 +91,6 @@ class WorldNode(Node):
     def _on_cmd(self, msg: Vector3):
         self.cmd, self.cmd_t = (msg.x, msg.y), self.t
 
-    # ------------------------------------------------------------------
     def _physics(self):
         dt = 1.0 / PHYS_HZ
         l, r = self.cmd if self.t - self.cmd_t < CMD_TIMEOUT_S else (0.0, 0.0)
@@ -153,7 +152,6 @@ class WorldNode(Node):
         s.ranges = [float(r) for _, r in rg.last]
         self.pub_scan.publish(s)
 
-    # ------------------------------------------------------------------
     def _markers(self):
         stamp = self.get_clock().now().to_msg()
         arr = MarkerArray()

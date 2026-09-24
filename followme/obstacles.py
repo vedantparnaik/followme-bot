@@ -1,15 +1,13 @@
-"""Reactive obstacle avoidance. No global map, a few seconds of memory.
+"""Reactive obstacle avoidance with a few seconds of memory (no map).
 
-Every source (range sensors, the camera's ground-plane fixes, other people)
-becomes a set of points in the rover frame. The followed person is masked out,
-otherwise the rover would "avoid" the person it is following.
+All sources (range sensors, camera ground-plane fixes, other people) become
+points in the rover frame. Points on the followed person are masked out.
 
-Planning is a fan of straight corridors, one per candidate heading. A corridor
-is as wide as the rover plus a margin. For each heading we measure how far we
-can drive before the corridor hits a point. Headings that are blocked inside
-``stop_dist`` are rejected; the rest are scored by how far they point away
-from the person and how cramped they are. The chosen heading replaces the
-person's bearing in the steering law; the free distance scales speed.
+Planning: one straight corridor per candidate heading, rover width plus a
+margin. Measure how far each is free, drop the ones blocked inside
+``stop_dist``, and score the rest by angle away from the person plus how
+cramped they are. The chosen heading replaces the person's bearing in the
+steering law, and the free distance scales speed.
 """
 from __future__ import annotations
 
@@ -90,11 +88,10 @@ def mask_target(points: Iterable[ObstaclePoint], target_xy: Optional[Tuple[float
 class Memory:
     """Short-term obstacle memory in the odometry frame.
 
-    Range sensors only see a cone ahead; while the rover curves around a
-    corner, the corner leaves the cone but is still there. Points are kept for
-    ``keep_s`` on a 5 cm grid and re-expressed in the current rover frame.
-    Other people move, so camera person fixes are never remembered. The
-    followed person is masked before anything is stored.
+    Range sensors only see a cone ahead, so a corner drops out of view while
+    the rover curves around it. Points are kept for ``keep_s`` on a 5 cm grid
+    and returned in the current rover frame. Camera fixes of people are not
+    stored since people move. The target is masked before this is called.
     """
 
     CELL = 0.05
@@ -174,11 +171,9 @@ class Planner:
     def plan(self, goal_bearing: float, points: Sequence[ObstaclePoint], now: float,
              goal_range: Optional[float] = None, seen_half: Optional[float] = None,
              keep_view: bool = True) -> Plan:
-        """Detours prefer to stay within ``view_keep`` of the person's bearing,
-        so the person stays in the camera while the rover goes around something.
-        Only if no such heading is free does it take a wider one. ``seen_half``
-        is how far to the side the range sensors actually look; unseen
-        headings are not free, just unknown."""
+        """Prefer headings that keep the person in the camera during a detour;
+        use wider ones only if none of those are free. With ``seen_half`` set,
+        headings outside the range sensors' coverage aren't considered."""
         a, body = self.cfg.avoid, self.cfg.body
         if not a.enabled or not points:
             return Plan(goal_bearing, 1.0, a.lookahead)

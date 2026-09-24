@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-"""A stand-in for the Pi: streams a video file as the camera, accepts /cmd.
+"""Fake Pi: serves a video file as the camera stream and accepts /cmd.
 
-Lets you run the whole Mac pipeline (YOLO, re-ID, brain, UI) on recorded
-footage without the robot:
+For testing the laptop app on recorded footage:
 
     python tools/fake_pi.py --video walk.mov           # serves :8000
     FOLLOWME_PI=127.0.0.1:8000 python robot/mac/follow_server.py
 
-Commands are logged, not driven: the video does not react to them.
-/odom integrates the commanded duty with the same model the Pi uses, so the
-brain's obstacle memory and PURSUE get plausible input.
+Commands are only logged (the video can't react to them). /odom integrates
+the commanded duty the same way the Pi does.
 """
 from __future__ import annotations
 

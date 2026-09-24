@@ -1,16 +1,11 @@
-"""Turn detector boxes into metric fixes.
+"""Detector boxes to range and bearing.
 
-The detector (YOLO on the robot, a virtual camera in the sim) produces
-``Detection`` objects. This module knows nothing about where they came from.
+target_fix: the followed person, from the box size (pinhole model). If the
+head or feet are cut off, the height reads too small, so the width is used.
 
-Two fixes are derived from a box:
-
-- ``target_fix``: range and bearing to the followed person, from the pinhole
-  size of the box. When the head or feet are cut off by the frame the height
-  lies (looks farther), so the unclipped dimension is used instead.
-- ``ground_fix``: range and bearing to anything standing on the floor, from
-  the image row of the box's bottom edge and the camera height (flat-ground
-  assumption). This is how the camera alone sees obstacles.
+ground_fix: anything standing on the floor, from the image row of the box
+bottom and the camera height (assumes flat ground). Used for camera-only
+obstacles.
 """
 from __future__ import annotations
 

@@ -1,16 +1,13 @@
-"""Every tunable number in one place.
+"""All tunable parameters.
 
-Two profiles share the same brain:
+hardware() is for the real 4-wheel skid-steer. A pivot from rest fires a ~55%
+stiction kick, so it steers by curving while rolling and only turns in place
+with short pulse-and-settle nudges. ideal() is for perfect motors:
+proportional steering and continuous search rotation.
 
-- ``hardware()`` - the real 4-wheel skid-steer. It cannot turn gently (a pivot
-  from rest fires a ~55% stiction kick), so it steers by curving while rolling
-  and turns in place only with short pulse-and-settle nudges.
-- ``ideal()`` - perfect motors. Smooth proportional steering and continuous
-  search rotation.
-
-Frames: rover frame is x forward, y left, origin at the chassis centre on the
-ground. Angles are radians, positive = counter-clockwise (to the left).
-Motor commands are left/right duty in percent, -100..100.
+Rover frame: x forward, y left, origin at the chassis centre on the ground.
+Angles in radians, positive = counter-clockwise (left). Motor commands are
+left/right duty in percent, -100..100.
 """
 from __future__ import annotations
 

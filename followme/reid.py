@@ -1,13 +1,13 @@
-"""Appearance memory for the followed person.
+"""Appearance gallery for the followed person.
 
-A tracker ID (ByteTrack) survives brief occlusion, but not a person walking
-behind a pillar for three seconds, and it can jump to whoever crossed in front.
-The gallery remembers what the target looks like so the brain can say "that
-new track is the same person" or "the tracked ID is no longer them".
+ByteTrack IDs survive short occlusions but not a few seconds behind a pillar,
+and an ID can jump to someone who crosses in front. The gallery is used to
+re-identify the target on a new track and to notice when the tracked ID no
+longer looks like them.
 
-Features are any fixed-length vectors. On the robot they are colour
-histograms of torso and legs (square-rooted, so cosine similarity is the
-Bhattacharyya coefficient). In the sim they are synthetic histograms.
+Features can be any fixed-length vector. On the robot they're square-rooted
+colour histograms of torso and legs (so cosine similarity is the
+Bhattacharyya coefficient); in the sim they're synthetic.
 """
 from __future__ import annotations
 

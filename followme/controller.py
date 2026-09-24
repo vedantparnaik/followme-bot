@@ -1,12 +1,11 @@
 """Steering laws: (range error, heading) -> left/right duty.
 
-``ArcDrive`` is for the real skid-steer. Small heading errors cannot be
-turned into small pivots on this chassis: a pivot from rest fires the Pi's
-stiction kick and spins ~30 degrees. So the rover only turns by curving while
-it rolls (both sides same sign, inner side slower). In the standoff band it
-creeps forward on a curve instead of pivoting. Pivots are reserved for blind
-search, as short nudges each followed by a mandatory settle so the camera can
-catch up with ~250 ms of dead time.
+``ArcDrive`` is for the real skid-steer, where a small heading error can't
+become a small pivot: a pivot from rest fires the Pi's stiction kick and
+spins ~30 degrees. So it only turns by curving while rolling (both sides same
+sign, inner side slower), and in the standoff band it creeps forward on a
+curve. Pivots are only used for blind search, as short nudges with a settle
+after each so the camera catches up (~250 ms of dead time).
 
 ``SmoothDrive`` is for perfect motors: proportional speed and yaw rate.
 """
@@ -134,7 +133,7 @@ class ArcDrive:
         else:
             self.out.stop()
             return 0.0, 0.0, True, "search done"
-        # Pulses go straight to the Pi: the kick is the point, don't smooth it.
+        # Pulses bypass the smoother so the Pi's stiction kick still fires.
         self.out.stop()
         return l, r, False, note
 

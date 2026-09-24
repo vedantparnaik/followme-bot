@@ -112,7 +112,6 @@ class Sim:
         if auto_arm:
             self.brain.arm()
 
-    # ------------------------------------------------------------------
     def step(self, dt: float = 0.01) -> None:
         w = self.sc.world
         w.t = self.t
@@ -138,7 +137,6 @@ class Sim:
         self._finish()
         return self.m
 
-    # ------------------------------------------------------------------
     def _contacts(self, prev) -> None:
         body = self.cfg.body
         pts = footprint(self.plant.pose, body.length, body.width)

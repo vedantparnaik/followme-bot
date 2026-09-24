@@ -1,7 +1,7 @@
-"""followme - the brain of a person-following robot.
+"""Brain of a person-following robot.
 
-Pure Python + numpy. No ROS, no OpenCV, no detector. Feed it detections and
-obstacle points, get left/right motor duty back.
+Takes detections and obstacle points, returns left/right motor duty. Only
+needs numpy.
 """
 from followme.brain import Brain, Output, State
 from followme.config import Config, hardware, ideal

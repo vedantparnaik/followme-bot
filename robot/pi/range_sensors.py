@@ -1,8 +1,7 @@
 """Three HC-SR04 ultrasonic sensors: front-left, front, front-right.
 
-Optional. The follow brain works camera-only, but the camera cannot see
-things a person detector has no class for (a pallet, a low box, a glass
-door). Three cheap ultrasonics cover the front arc.
+Optional. They cover the front arc for things the camera can't classify
+(pallets, low boxes, glass doors).
 
 Wiring (BCM numbering; none of these clash with the motor pins):
 

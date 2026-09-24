@@ -1,8 +1,7 @@
-"""JSON on std_msgs/String between the world and the brain.
+"""Detections and range readings as JSON in std_msgs/String.
 
-Detections and range points are small and change shape often while
-developing; JSON keeps the package free of custom message builds. Swap for
-vision_msgs / sensor_msgs later without touching the core.
+Avoids a custom message package while the format keeps changing. Could move
+to vision_msgs / sensor_msgs later.
 """
 from __future__ import annotations
 

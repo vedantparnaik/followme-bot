@@ -1,19 +1,13 @@
 """Target selection and identity tracking.
 
-Lock once, then follow that identity rather than whoever is biggest.
+Locks the biggest, most central person once they've been the candidate for
+``lock_stable_s``, then follows that tracker ID. Anyone seen in the same
+frame as the target is marked as someone else.
 
-1. Lock: the biggest, most central person with a tracker ID, and only after
-   the same candidate has persisted for ``lock_stable_s``.
-2. Track by ID every frame. Anyone seen in the same frame as the target is
-   remembered as "definitely not them".
-3. If the ID disappears: coast on the last fix for ``lost_grace_s``, and try
-   re-identification by appearance on every new track.
-4. If the ID is still present but stops looking like the target for several
-   frames, the tracker swapped identities (someone crossed in front). Treat
-   the target as lost and let re-ID find them again.
-
-A lost target is never replaced by a stranger automatically. Only an explicit
-``reset()`` allows locking a new person.
+If the ID disappears, coast on the last fix for ``lost_grace_s`` and try
+re-ID on new tracks. If the ID is still there but the box jumps or stops
+matching the gallery, treat it as an ID swap: drop it and let re-ID find
+them again. Only ``reset()`` allows locking a different person.
 """
 from __future__ import annotations
 
@@ -69,7 +63,6 @@ class TargetTracker:
         self._mismatch = 0
         self._score_ema = 1.0
 
-    # ------------------------------------------------------------------
     def update(self, dets: Sequence[Detection], now: float) -> TrackResult:
         persons = [d for d in dets if d.label == "person" and d.track_id is not None]
         if not self.locked:
@@ -111,7 +104,6 @@ class TargetTracker:
             return TrackResult(self.last_det, "coast", self.target_id, lost_for, event)
         return TrackResult(None, "lost", self.target_id, lost_for, event)
 
-    # ------------------------------------------------------------------
     def _try_lock(self, persons: List[Detection], now: float) -> TrackResult:
         cand = pick_lock(persons, self.cfg.camera.width)
         if cand is None:
@@ -131,9 +123,9 @@ class TargetTracker:
         return TrackResult(cand, "id", self.target_id, 0.0, f"locked #{cand.track_id}")
 
     def _teleported(self, match: Detection, now: float) -> bool:
-        """People cannot jump. If the box for the same ID changes size or
-        position far more than one frame of walking allows, the tracker has
-        handed the ID to someone else. Works even when clothes look alike."""
+        """Same ID, but the box moved or changed size more than a person can
+        in one frame: the tracker gave the ID to someone else. Doesn't rely
+        on appearance."""
         prev = self.last_det
         if prev is None or now - self.last_seen > 0.15:
             return False
@@ -141,7 +133,7 @@ class TargetTracker:
         c0 = clip_flags(prev.box, cam, f.edge_margin)
         c1 = clip_flags(match.box, cam, f.edge_margin)
         if c0[2] or c0[3] or c1[2] or c1[3]:
-            return False          # cut off at the side: size and centre both lie
+            return False          # clipped at the side: size and centre are unreliable
         px, _, pw, ph = prev.box
         x, _, w, h = match.box
         # Compare like with like: widths if either box is cut at top/bottom.
@@ -165,8 +157,8 @@ class TargetTracker:
         return False
 
     def _maybe_learn(self, det: Detection, other_boxes) -> None:
-        """Only learn from clean views: unclipped, big enough, not overlapping,
-        and still looking like the target (never learn a swapped identity)."""
+        """Only add clean views: unclipped, big enough, not overlapping anyone,
+        and still matching the gallery (so a swapped ID is never learned)."""
         if det.feature is None:
             return
         cam, r = self.cfg.camera, self.cfg.reid
@@ -187,13 +179,12 @@ class TargetTracker:
         scored = sorted(
             ((self.gallery.score(p.feature), p) for p in persons if p.feature is not None),
             key=lambda sp: sp[0], reverse=True)
+        # IDs already marked as someone else are skipped even if they look alike.
         cands = [(s, p) for s, p in scored if p.track_id not in self.known_others]
         if not cands:
             self._reid_id, self._reid_count = None, 0
             return None
         best_s, best = cands[0]
-        # People already known to be someone else can't be confused with the
-        # target, however alike they look; only compare against unknowns.
         runner_up = cands[1][0] if len(cands) > 1 else 0.0
         if best_s < r.accept or best_s - runner_up < r.margin:
             self._reid_id, self._reid_count = None, 0

@@ -20,13 +20,12 @@ Endpoints:  /  /stream  /snapshot  /audio  /cmd?l=&r=  /stats
             /range  ultrasonic readings (only with FOLLOWME_SONAR=1)
             POST /rec/start  POST /rec/stop  /rec/status  /recordings  /rec/file
 
-Odometry is integrated from the duty actually applied to each side, not from
-wheel encoders (there are none). It drifts, and a skid-steer slips when it
-turns, so yaw is the weakest part. The follow brain only uses it to remember
-obstacles for a few seconds and to drive to where the person was last seen,
-which is what it is good enough for. Calibrate FOLLOWME_V_AT_100 (m/s at 100%
-duty, straight) and FOLLOWME_TRACK_EFF (effective track width, m; larger than
-the real one on a skid-steer) for your chassis.
+/odom is integrated from the duty applied to each side (no encoders), so it
+drifts, yaw especially since a skid-steer slips when it turns. The follow
+brain only uses it for a few seconds of obstacle memory and for driving to
+the last-seen point. Calibrate FOLLOWME_V_AT_100 (m/s at 100% duty,
+straight) and FOLLOWME_TRACK_EFF (effective track width in m, larger than
+the real one on a skid-steer).
 """
 
 import json
@@ -40,7 +39,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 import RPi.GPIO as GPIO
 
-# ---------------- config ----------------
+# config
 DEVICE = "/dev/video0"
 WIDTH, HEIGHT, FPS = 640, 480, 30   # low-res for snappy FPV latency
 AUDIO_DEV = "plughw:3,0"            # BRIO built-in mic (ALSA card 3)
@@ -56,9 +55,9 @@ MIN_DUTY = 18.0         # steady-state floor once rolling
 TURN_MIN_DUTY = 26.0    # pivots scrub all four tyres sideways, so they need more
 KICK_DUTY = 55.0        # stiction-breaking pulse
 KICK_S = 0.18
-# Only kick a side that has genuinely been at rest. A command oscillating
-# around zero would otherwise re-kick every few frames and make the rover
-# lurch side to side instead of holding still.
+# Only kick a side that has been at rest for KICK_REARM_S. A command
+# oscillating around zero would otherwise re-kick every few frames and make
+# the rover lurch side to side instead of holding still.
 KICK_REARM_S = 0.5
 SLEW = 400.0            # max duty change per second; 0->100 in 250ms
 
@@ -66,7 +65,7 @@ V_AT_100 = float(os.environ.get("FOLLOWME_V_AT_100", "1.35"))
 TRACK_EFF = float(os.environ.get("FOLLOWME_TRACK_EFF", "0.46"))
 SONAR = os.environ.get("FOLLOWME_SONAR") == "1"
 
-# ---------------- motors ----------------
+# motors
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -197,7 +196,7 @@ if SONAR:
     from range_sensors import RangeSensors
     ranger = RangeSensors()
 
-# ---------------- camera ----------------
+# camera
 _cond = threading.Condition()
 _latest = {"jpg": None, "n": 0}
 
@@ -250,7 +249,7 @@ def camera_thread():
 
 threading.Thread(target=camera_thread, daemon=True).start()
 
-# ---------------- audio ----------------
+# audio
 # One ffmpeg per /audio request produces a low-latency Opus/WebM stream from the
 # mic. Only one reader can hold the ALSA device, so a new request kills the old.
 _aproc = None
@@ -278,7 +277,7 @@ def start_audio():
         return _aproc
 
 
-# ---------------- system stats helpers ----------------
+# system stats helpers
 _CLK = os.sysconf("SC_CLK_TCK") if hasattr(os, "sysconf") else 100
 REC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "recordings")
 
@@ -367,7 +366,7 @@ def _throttled():
         return ""
 
 
-# ---------------- recorder ----------------
+# recorder
 class Recorder:
     """Records synchronized A/V (video from the shared frame buffer + mic audio),
     a motor-command log, and periodic Pi system stats into recordings/<ts>/."""
@@ -535,7 +534,7 @@ class Recorder:
 os.makedirs(REC_DIR, exist_ok=True)
 recorder = Recorder()
 
-# ---------------- live system stats (for the /stats endpoint) ----------------
+# live system stats (for the /stats endpoint)
 _sysstats = {}
 
 
@@ -576,7 +575,7 @@ def sysstats_loop():
 
 threading.Thread(target=sysstats_loop, daemon=True).start()
 
-# ---------------- page ----------------
+# page
 PAGE = """<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>FPV Rover</title>

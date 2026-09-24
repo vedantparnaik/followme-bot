@@ -1,12 +1,10 @@
-"""Appearance features for re-identification, from the camera image.
+"""Re-ID features from the camera image.
 
-Colour histograms of the torso and the legs, in HSV so lighting changes
-move the V channel more than hue. Square-rooted and L2-normalised, so the
-cosine similarity used by ``followme.reid`` is the Bhattacharyya coefficient.
-
-Cheap (well under a millisecond per person) and good enough to tell a red
-jacket from a grey one. It will not separate two people in the same uniform;
-a learned re-ID embedding (OSNet etc.) drops in here with the same interface.
+HSV colour histograms of torso and legs (HSV because lighting mostly moves V,
+not hue), square-rooted and L2-normalised so cosine similarity in
+``followme.reid`` is the Bhattacharyya coefficient. Well under 1 ms per
+person. Can't separate two people dressed the same; a learned embedding
+(e.g. OSNet) could replace ``person_feature``.
 """
 from __future__ import annotations
 

@@ -23,8 +23,7 @@ WAIT     search exhausted: stand still, keep looking by appearance. Only a
          user re-lock picks a new person.
 ESTOP    latched stop.
 
-Inputs are plain data (detections + obstacle points + a timestamp), so the
-same brain runs on the robot, in the ROS sim and in headless tests.
+Inputs are plain data with a timestamp, no ROS or OpenCV types.
 """
 from __future__ import annotations
 
@@ -89,11 +88,10 @@ class Brain:
         self._pursue_until: Optional[float] = None
         self._seen_half: Optional[float] = None  # side coverage of the range sensors
         self._blocked_since: Optional[float] = None
-        # Recent (t, bearing, seen_at, walk), to undo the frames an ID swap poisoned.
+        # (t, bearing, seen_at, walk) per frame, for rolling back after an ID swap
         self._history: deque = deque(maxlen=90)
         self._backoff_until = -1e9
 
-    # ---- commands -----------------------------------------------------
     def arm(self) -> None:
         if not self.estopped:
             self.armed = True
@@ -138,7 +136,6 @@ class Brain:
         """Call after changing ``cfg.steer.mode``."""
         self.drive = make_drive(self.cfg)
 
-    # ---- one frame ----------------------------------------------------
     def step(self, now: float, detections: Sequence[Detection],
              obstacles: Sequence[ObstaclePoint] = (),
              odom: Optional[tuple] = None,

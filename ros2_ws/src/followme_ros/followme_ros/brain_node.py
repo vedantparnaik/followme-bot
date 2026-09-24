@@ -1,4 +1,4 @@
-"""The follow-me brain as a ROS 2 node. Same ``followme.Brain`` as the robot.
+"""ROS 2 node wrapping ``followme.Brain``.
 
   sub  /detections   std_msgs/String (JSON)   one brain step per message
   sub  /range        std_msgs/String (JSON)   latest range points + free cones

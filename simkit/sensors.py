@@ -1,10 +1,10 @@
 """Virtual sensors: what the rover would perceive in a ``World``.
 
-``VirtualCamera`` stands in for YOLO + ByteTrack. It projects people and
-camera-visible obstacles through the same pinhole the brain assumes, and adds
-the failure modes that matter: box jitter, dropped frames, occlusion by
-pillars and by other people, a new track ID after a long occlusion, and
-(optionally) the tracker handing the target's ID to whoever walked in front.
+``VirtualCamera`` replaces YOLO + ByteTrack. It projects people and
+camera-visible obstacles through the same pinhole model the brain uses, and
+adds box jitter, dropped frames, occlusion (by pillars and by other people),
+new track IDs after long occlusions and, optionally, ID swaps to whoever
+walks in front.
 
 ``Lidar`` and ``Sonar3`` are range sensors: a planar scan, or three
 ultrasonic cones like the HC-SR04 layout in ``docs/hardware.md``.

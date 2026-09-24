@@ -1,11 +1,11 @@
-"""Rover bodies: left/right duty in, pose out.
+"""Drive models: left/right duty -> pose.
 
 ``IdealPlant``    duty maps straight to wheel speed (tiny lag). Perfect motors.
 ``HardwarePlant`` the real drive layer and chassis, as measured:
                   ~250 ms command dead time (camera -> Wi-Fi -> YOLO -> motor),
                   a 55% stiction kick for 0.18 s whenever a side starts from
                   rest, minimum duty floors (18% rolling, 26% pivoting) and a
-                  400 %/s slew. Same numbers as ``robot/pi/fpv_server.py``.
+                  400%/s slew. Same numbers as ``robot/pi/fpv_server.py``.
 """
 from __future__ import annotations
 

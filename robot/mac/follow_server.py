@@ -1,28 +1,22 @@
 #!/usr/bin/env python3
-"""Follow-me autonomy for the rover. Runs on a laptop next to the robot.
+"""Laptop side of the rover.
 
-Open http://127.0.0.1:8080/ to see what the rover sees, arm it, and tune it.
+Runs YOLO + ByteTrack on the Pi's camera stream, computes colour features,
+reads /odom and /range from the Pi, and feeds it all to ``followme.Brain``.
+The duty it returns goes back to the Pi's /cmd.
 
-    Pi  --MJPEG-->  this app  --/cmd?l=&r=-->  Pi motors (0.25 s deadman)
-    Pi  --/odom, /range (optional)-->  this app
+    FOLLOWME_PI=raspberrypi.local:8000 python robot/mac/follow_server.py
 
-This file is only plumbing: frames in, YOLO + ByteTrack, colour features,
-range readings and odometry into ``followme.Brain``, duty out. Every decision
-(which person, how fast, which way round the box, what to do when they vanish)
-is made by the same brain the simulator tests.
+UI at http://127.0.0.1:8080/. Non-person YOLO classes (chairs, bags, bikes)
+are passed in as camera obstacles; anything YOLO has no class for needs the
+ultrasonics.
 
-What YOLO sees besides people (chairs, bags, carts, bicycles...) becomes
-camera obstacles via the flat-ground fix. Things it has no class for are
-invisible without the ultrasonics.
-
-SAFETY
-- Starts DISARMED: the brain runs and draws, but 0,0 is sent.
-- E-STOP latches until "Reset e-stop".
-- Target lost: PURSUE / SEARCH are bounded, then WAIT (standing still). It
-  never locks onto a new person by itself; "Re-lock" is a deliberate action.
-- The Pi stops the motors if this app dies or the network drops.
-
-Run:  FOLLOWME_PI=raspberrypi.local:8000 python robot/mac/follow_server.py
+Safety:
+- starts disarmed (the brain runs, but 0,0 is sent)
+- E-STOP latches until "Reset e-stop"
+- when the target is lost, PURSUE/SEARCH are bounded and then it waits in
+  place; only "Re-lock" picks a new person
+- the Pi stops the motors if this app dies or the Wi-Fi drops (0.25 s deadman)
 """
 from __future__ import annotations
 
@@ -49,7 +43,7 @@ from features import person_feature, to_hsv            # noqa: E402
 from followme import Brain, Detection, State, hardware  # noqa: E402
 from followme.obstacles import RangeCone, spread        # noqa: E402
 
-# ---------------- config ----------------
+# config
 PORT = int(os.environ.get("FOLLOWME_PORT", "8080"))
 PI = os.environ.get("FOLLOWME_PI", "raspberrypi.local:8000").replace("http://", "").rstrip("/")
 MODEL = os.environ.get("FOLLOWME_MODEL", "yolov8n.pt")
@@ -94,7 +88,7 @@ def fetch_json(path, timeout=0.5):
         return json.loads(r.read())
 
 
-# ---------------- inputs from the Pi ----------------
+# inputs from the Pi
 _raw_lock = threading.Lock()
 _raw = {"img": None, "n": 0}
 
@@ -172,7 +166,7 @@ def current_odom():
     return _side["odom"]
 
 
-# ---------------- output to the Pi ----------------
+# output to the Pi
 class Commander:
     def __init__(self):
         self.lock = threading.Lock()
@@ -206,7 +200,7 @@ class Commander:
 
 commander = Commander()
 
-# ---------------- perception + brain ----------------
+# perception + brain
 _state_lock = threading.Lock()
 S = {"state": "IDLE", "note": "starting", "event": "", "events": [], "target_id": None,
      "range_m": None, "bearing_deg": None, "clipped": "", "reid": 0.0, "l": 0.0, "r": 0.0,
@@ -340,7 +334,7 @@ def vision_loop():
             })
 
 
-# ---------------- web UI ----------------
+# web UI
 PAGE = """<!doctype html><meta charset=utf-8>
 <title>followme-bot</title>
 <style>

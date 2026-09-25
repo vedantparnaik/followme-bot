@@ -8,7 +8,7 @@ it: any drivetrain that takes left/right duty and any camera that gives
 
 | Item | Notes |
 |------|-------|
-| Chassis | 4-wheel skid-steer, ~0.62 x 0.40 m |
+| Chassis | 4 mecanum wheels, driven skid-steer style (left/right pairs), ~0.62 x 0.40 m |
 | Computer | Raspberry Pi 4B on the rover (motors, camera stream, sensors) |
 | Autonomy | Any laptop on the same Wi-Fi (YOLO + the brain) |
 | Motor drivers | 4x BTS7960 (IBT-2), one per motor |

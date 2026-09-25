@@ -5,7 +5,7 @@ about 2.6 m behind them, steers around obstacles, and keeps track of who it
 is following when other people walk through the frame.
 
 The repo has the brain (`followme/`), a 2-D simulator with test scenarios
-(`simkit/`), a ROS 2 package, and the code that runs it on my rover: a
+(`simkit/`), a ROS 2 package, and the code for running it on my rover: a
 Raspberry Pi 4 driving four motors, with a laptop running YOLO over Wi-Fi.
 
 | Look-alike crosses in front | Around furniture | Behind a pillar |
